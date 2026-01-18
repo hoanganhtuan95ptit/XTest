@@ -10,6 +10,8 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import com.simple.notification.testing.MainApplication
+import com.simple.notification.testing.data.repositories.notification.general.DefaultNotificationProvider
+import java.util.ServiceLoader
 
 interface NotificationProvider : ODEProvider {
 
@@ -75,6 +77,13 @@ interface NotificationProvider : ODEProvider {
             detailIntent.data = Uri.parse("package:$packageName")
             detailIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(detailIntent)
+        }
+    }
+
+    companion object {
+        fun get(): NotificationProvider {
+            val providers = ServiceLoader.load(NotificationProvider::class.java).toList()
+            return providers.firstOrNull { it.accept() } ?: DefaultNotificationProvider()
         }
     }
 }

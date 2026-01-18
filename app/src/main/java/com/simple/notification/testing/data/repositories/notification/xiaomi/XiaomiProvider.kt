@@ -5,7 +5,7 @@ import com.simple.notification.testing.data.repositories.notification.ODEProvide
 import java.util.Locale
 
 interface XiaomiProvider : ODEProvider {
-    override suspend fun accept(): Boolean {
+    override fun accept(): Boolean {
         val manufacturer = Build.MANUFACTURER.lowercase(Locale.getDefault())
         return manufacturer.contains("xiaomi")
     }

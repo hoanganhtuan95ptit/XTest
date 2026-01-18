@@ -4,5 +4,5 @@ import com.simple.notification.testing.data.repositories.notification.ODEProvide
 
 interface DefaultProvider : ODEProvider {
 
-    override suspend fun accept(): Boolean = true
+    override fun accept(): Boolean = true
 }

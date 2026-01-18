@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.PowerManager
 import com.simple.notification.testing.MainApplication
 import kotlinx.coroutines.flow.first
+import java.util.ServiceLoader
 
 interface PowerProvider : ODEProvider {
 
@@ -13,4 +14,11 @@ interface PowerProvider : ODEProvider {
     }
 
     suspend fun openBatteryOptimizationSettings(packageName: String)
+
+    companion object {
+        suspend fun get(): PowerProvider {
+            val providers = ServiceLoader.load(PowerProvider::class.java).toList()
+            return providers.firstOrNull { it.accept() } ?: providers.first { it is com.simple.notification.testing.data.repositories.notification.general.DefaultPowerProvider }
+        }
+    }
 }

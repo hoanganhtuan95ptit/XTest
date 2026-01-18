@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.first
 
 class DefaultAutoStartProvider : DefaultProvider, AutoStartProvider {
 
-    override fun isEnabled(packageName: String): Boolean {
+    override fun isAvailable(): Boolean = false
+
+    override fun isEnabled(packageName: String): Boolean? {
         // Mặc định các máy không phải hãng Trung Quốc thường không chặn tự khởi chạy
         return true
     }

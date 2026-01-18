@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.kotlin.kapt)
 }
 
 android {
@@ -63,6 +64,10 @@ dependencies {
     // Networking
     implementation libs.retrofit
     implementation libs.retrofit.gson
+
+    // AutoService
+    compileOnly libs.auto.service.annotations
+    kapt libs.auto.service
 
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

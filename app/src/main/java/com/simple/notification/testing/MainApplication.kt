@@ -12,7 +12,7 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks {
         lateinit var share: MainApplication
             private set
 
-        private val _activityResumeFlow = MutableSharedFlow<Activity>(extraBufferCapacity = 1)
+        private val _activityResumeFlow = MutableSharedFlow<Activity>(replay = 1)
         val activityResumeFlow = _activityResumeFlow.asSharedFlow()
     }
 

@@ -3,59 +3,73 @@ package com.simple.notification.testing
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.WriterException
 import com.journeyapps.barcodescanner.BarcodeEncoder
 import com.journeyapps.barcodescanner.ScanContract
-import com.simple.notification.testing.databinding.ActivityFcmTestBinding
+import com.journeyapps.barcodescanner.ScanOptions
+import com.simple.notification.testing.databinding.FragmentFcmTestBinding
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
 
-class FcmTestActivity : AppCompatActivity() {
+class FcmTestFragment : Fragment() {
 
-    private lateinit var binding: ActivityFcmTestBinding
+    private var _binding: FragmentFcmTestBinding? = null
+    private val binding get() = _binding!!
     private var targetToken: String? = null
 
-    // CHÚ Ý: Gửi FCM trực tiếp từ App yêu cầu Server Key (Legacy) hoặc OAuth2.
-    // Đây là cách làm để demo, thực tế nên gọi qua Server của bạn.
     private val FCM_SERVER_KEY = "YOUR_SERVER_KEY_HERE"
 
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
         if (result.contents == null) {
-            Toast.makeText(this, "Đã hủy quét", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "Đã hủy quét", Toast.LENGTH_LONG).show()
         } else {
             targetToken = result.contents
             binding.tvTargetToken.text = targetToken
             binding.tvTargetToken.visibility = View.VISIBLE
             binding.tvTargetTokenLabel.visibility = View.VISIBLE
             binding.btnSendNotification.isEnabled = true
-            Toast.makeText(this, "Đã lấy được token!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Đã lấy được token!", Toast.LENGTH_SHORT).show()
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityFcmTestBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentFcmTestBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         getMyFcmToken()
 
         binding.btnScanQr.setOnClickListener {
-            barcodeLauncher.launch(com.journeyapps.barcodescanner.ScanOptions())
+            val options = ScanOptions().apply {
+                setCaptureActivity(CaptureActivityPortrait::class.java)
+                setOrientationLocked(false)
+                setBeepEnabled(true)
+                setPrompt("Quét mã QR Token")
+            }
+            barcodeLauncher.launch(options)
         }
 
         binding.btnSendNotification.setOnClickListener {
             val message = binding.etMessage.text.toString()
             if (message.isEmpty()) {
-                Toast.makeText(this, "Vui lòng nhập nội dung", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Vui lòng nhập nội dung", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             sendNotification(targetToken!!, message)
@@ -88,7 +102,7 @@ class FcmTestActivity : AppCompatActivity() {
 
     private fun sendNotification(token: String, message: String) {
         if (FCM_SERVER_KEY == "YOUR_SERVER_KEY_HERE") {
-            Toast.makeText(this, "Vui lòng cấu hình FCM_SERVER_KEY trong code", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "Vui lòng cấu hình FCM_SERVER_KEY trong code", Toast.LENGTH_LONG).show()
             return
         }
 
@@ -118,20 +132,25 @@ class FcmTestActivity : AppCompatActivity() {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread {
-                    Toast.makeText(this@FcmTestActivity, "Gửi thất bại: ${e.message}", Toast.LENGTH_SHORT).show()
+                activity?.runOnUiThread {
+                    Toast.makeText(requireContext(), "Gửi thất bại: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onResponse(call: Call, response: Response) {
-                runOnUiThread {
+                activity?.runOnUiThread {
                     if (response.isSuccessful) {
-                        Toast.makeText(this@FcmTestActivity, "Đã gửi thông báo!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Đã gửi thông báo!", Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(this@FcmTestActivity, "Lỗi: ${response.code}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Lỗi: ${response.code}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
         })
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

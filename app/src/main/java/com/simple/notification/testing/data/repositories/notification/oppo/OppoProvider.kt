@@ -6,7 +6,7 @@ import java.util.Locale
 
 interface OppoProvider : ODEProvider {
 
-    override suspend fun accept(): Boolean {
+    override fun accept(): Boolean {
         val manufacturer = Build.MANUFACTURER.lowercase(Locale.getDefault())
         return manufacturer.contains("oppo") || manufacturer.contains("realme")
     }
