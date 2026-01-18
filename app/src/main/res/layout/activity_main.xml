@@ -24,6 +24,28 @@
         android:id="@+id/btnOpenAutoStart"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
         android:text="Bật tự động khởi chạy" />
+
+    <Button
+        android:id="@+id/btnFixOtherApps"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:backgroundTint="#4CAF50"
+        android:text="Sửa lỗi thông báo (App khác)" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginBottom="24dp"
+        android:background="#CCCCCC" />
+
+    <Button
+        android:id="@+id/btnFcmTest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#FF9800"
+        android:text="Kiểm tra thông báo qua FCM" />
 
 </LinearLayout>

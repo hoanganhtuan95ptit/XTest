@@ -2,6 +2,7 @@ package com.simple.notification.testing
 
 import android.Manifest
 import android.app.AlertDialog
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -31,18 +32,20 @@ class MainActivity : FragmentActivity() {
         setupNotificationButton()
         setupBatteryButton()
         setupAutoStartButton()
+        setupAppListButton()
+        setupFcmButton()
     }
 
     private fun setupNotificationButton() {
         val btn = findViewById<Button>(R.id.btnNotificationPermission)
         btn.setOnClickListener {
-            if (NotificationUtils.isGranted(this, packageName)) {
+            if (NotificationUtils_Legacy.isGranted(this, packageName)) {
                 Toast.makeText(this, "Thông báo đã được bật", Toast.LENGTH_SHORT).show()
             } else {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 } else {
-                    NotificationUtils.openSettings(this, packageName)
+                    NotificationUtils_Legacy.openSettings(this, packageName)
                 }
             }
         }
@@ -81,10 +84,22 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    private fun setupAppListButton() {
+        findViewById<Button>(R.id.btnFixOtherApps).setOnClickListener {
+            startActivity(Intent(this, AppListActivity::class.java))
+        }
+    }
+
+    private fun setupFcmButton() {
+        findViewById<Button>(R.id.btnFcmTest).setOnClickListener {
+            startActivity(Intent(this, FcmTestActivity::class.java))
+        }
+    }
+
     private fun showOppoGuidanceDialog(onConfirm: () -> Unit) {
         AlertDialog.Builder(this)
             .setTitle("Hướng dẫn Tự khởi chạy")
-            .setMessage("Để không bỏ lỡ thông báo quan trọng, vui lòng thực hiện:\n\n1. Tìm ứng dụng 'NotiTesting' trong danh sách sắp tới.\n2. BẬT công tắc để cho phép ứng dụng Tự khởi chạy.")
+            .setMessage("Để ứng dụng hoạt động ổn định trên thiết bị Oppo/Realme, vui lòng thực hiện trong màn hình tiếp theo:\n\n1. Chọn mục 'Sử dụng pin' (Battery usage).\n2. Bật 'Cho phép hoạt động tự khởi chạy' (Allow auto-launch).\n3. Bật 'Cho phép hoạt động dưới nền' (Allow background activity).")
             .setPositiveButton("Đã hiểu và Mở") { _, _ ->
                 onConfirm()
             }
@@ -99,7 +114,7 @@ class MainActivity : FragmentActivity() {
 
     private fun updateButtonStates() {
         val btnNoti = findViewById<Button>(R.id.btnNotificationPermission)
-        if (NotificationUtils.isGranted(this, packageName)) {
+        if (NotificationUtils_Legacy.isGranted(this, packageName)) {
             btnNoti.text = "✅ Thông báo đã bật"
             btnNoti.alpha = 0.6f
         } else {
@@ -124,5 +139,17 @@ class MainActivity : FragmentActivity() {
             btnAutoStart.text = "Bật tự động khởi chạy"
             btnAutoStart.alpha = 1.0f
         }
+    }
+}
+
+object NotificationUtils_Legacy {
+    fun isGranted(context: android.content.Context, packageName: String): Boolean {
+        return androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
+    fun openSettings(context: android.content.Context, packageName: String) {
+        val intent = android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)
+        }
+        context.startActivity(intent)
     }
 }
