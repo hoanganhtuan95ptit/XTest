@@ -6,6 +6,14 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <TextView
+        android:id="@+id/tvDeviceIntegrity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="Checking device integrity..."
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+
     <Button
         android:id="@+id/btnNotificationPermission"
         android:layout_width="match_parent"

@@ -14,14 +14,16 @@ class DefaultPowerProvider : DefaultProvider, PowerProvider {
     override suspend fun openBatteryOptimizationSettings(packageName: String) {
         val activity = MainApplication.activityResumeFlow.first()
         try {
-            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+            // Mở trực tiếp màn hình chi tiết ứng dụng (App Info)
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:$packageName")
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             activity.startActivity(intent)
         } catch (e: Exception) {
             try {
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.parse("package:$packageName")
+                // Fallback về danh sách tối ưu hóa pin nếu không mở được App Info
+                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 activity.startActivity(intent)

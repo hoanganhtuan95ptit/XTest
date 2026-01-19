@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.simple.notification.testing.data.repositories.notification.AutoStartProvider
+import com.simple.notification.testing.data.repositories.notification.DeviceIntegrityProvider
 import com.simple.notification.testing.data.repositories.notification.PowerProvider
 import com.simple.notification.testing.data.repositories.notification.general.DefaultNotificationProvider
 import com.simple.notification.testing.databinding.FragmentMainBinding
@@ -47,11 +48,16 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupDeviceIntegrity()
         setupNotificationButton()
         setupBatteryButton()
         setupAutoStartButton()
         setupAppListButton()
         setupFcmButton()
+    }
+
+    private fun setupDeviceIntegrity() {
+        binding.tvDeviceIntegrity.text = DeviceIntegrityProvider.get().checkIsGenuine()
     }
 
     private fun setupNotificationButton() {
