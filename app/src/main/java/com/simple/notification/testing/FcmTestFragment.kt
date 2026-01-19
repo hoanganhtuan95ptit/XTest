@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
@@ -27,8 +28,10 @@ class FcmTestFragment : Fragment() {
     private var _binding: FragmentFcmTestBinding? = null
     private val binding get() = _binding!!
     private var targetToken: String? = null
+    private var myToken: String? = null
 
-    private val FCM_SERVER_KEY = "YOUR_SERVER_KEY_HERE"
+    private val PUSH_API_URL = "https://us-central1-detect-translate-8.cloudfunctions.net/sendPushNotification"
+    private val auth = FirebaseAuth.getInstance()
 
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
         if (result.contents == null) {
@@ -39,7 +42,7 @@ class FcmTestFragment : Fragment() {
             binding.tvTargetToken.visibility = View.VISIBLE
             binding.tvTargetTokenLabel.visibility = View.VISIBLE
             binding.btnSendNotification.isEnabled = true
-            Toast.makeText(requireContext(), "Đã lấy được token!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Đã lấy được token từ QR!", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -72,7 +75,14 @@ class FcmTestFragment : Fragment() {
                 Toast.makeText(requireContext(), "Vui lòng nhập nội dung", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            sendNotification(targetToken!!, message)
+
+            val tokenToSend = targetToken ?: myToken
+            if (tokenToSend == null) {
+                Toast.makeText(requireContext(), "Chưa có token để gửi", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            ensureAuthAndSend(message, tokenToSend)
         }
     }
 
@@ -83,7 +93,9 @@ class FcmTestFragment : Fragment() {
                 return@addOnCompleteListener
             }
             val token = task.result
+            myToken = token
             binding.tvMyToken.text = token
+            binding.btnSendNotification.isEnabled = true // Cho phép gửi cho chính mình ngay khi có token
             generateQrCode(token)
         }
     }
@@ -100,34 +112,50 @@ class FcmTestFragment : Fragment() {
         }
     }
 
-    private fun sendNotification(token: String, message: String) {
-        if (FCM_SERVER_KEY == "YOUR_SERVER_KEY_HERE") {
-            Toast.makeText(requireContext(), "Vui lòng cấu hình FCM_SERVER_KEY trong code", Toast.LENGTH_LONG).show()
-            return
+    private fun ensureAuthAndSend(message: String, token: String) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            // Đăng nhập ẩn danh nếu chưa có user
+            auth.signInAnonymously().addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    getIdTokenAndSend(message, token)
+                } else {
+                    Toast.makeText(requireContext(), "Đăng nhập thất bại: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            getIdTokenAndSend(message, token)
         }
+    }
 
+    private fun getIdTokenAndSend(message: String, token: String) {
+        auth.currentUser?.getIdToken(true)?.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val idToken = task.result.token
+                if (idToken != null) {
+                    sendNotification(token, message, idToken)
+                }
+            } else {
+                Toast.makeText(requireContext(), "Lấy Auth Token thất bại", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun sendNotification(token: String, message: String, authIdToken: String) {
         val client = OkHttpClient()
         val mediaType = "application/json; charset=utf-8".toMediaType()
 
         val json = JSONObject().apply {
-            put("to", token)
-            val notification = JSONObject().apply {
-                put("title", "Test FCM")
-                put("body", message)
-                put("sound", "default")
-            }
-            put("notification", notification)
-            val data = JSONObject().apply {
-                put("message", message)
-            }
-            put("data", data)
+            put("token", token)
+            put("title", "Test 🔔")
+            put("body", message)
         }
 
         val body = json.toString().toRequestBody(mediaType)
         val request = Request.Builder()
-            .url("https://fcm.googleapis.com/fcm/send")
+            .url(PUSH_API_URL)
             .post(body)
-            .addHeader("Authorization", "key=$FCM_SERVER_KEY")
+            .addHeader("Authorization", "Bearer $authIdToken") // Thêm Auth Token vào header
             .build()
 
         client.newCall(request).enqueue(object : Callback {
@@ -138,11 +166,13 @@ class FcmTestFragment : Fragment() {
             }
 
             override fun onResponse(call: Call, response: Response) {
+                val responseData = response.body?.string()
                 activity?.runOnUiThread {
                     if (response.isSuccessful) {
-                        Toast.makeText(requireContext(), "Đã gửi thông báo!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Đã gửi thông báo thành công!", Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(requireContext(), "Lỗi: ${response.code}", Toast.LENGTH_SHORT).show()
+                        Log.e("FCM_ERROR", "Response: $responseData")
+                        Toast.makeText(requireContext(), "Lỗi API: ${response.code}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }

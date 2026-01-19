@@ -22,10 +22,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.simple.notification.testing" />
+                  <option name="mobileSdkAppId" value="1:1091381255301:android:420ff339cef134cf5fddec" />
+                  <option name="projectId" value="detect-translate-8" />
+                  <option name="projectNumber" value="1091381255301" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
