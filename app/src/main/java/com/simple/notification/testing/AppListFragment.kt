@@ -87,11 +87,11 @@ class AppListFragment : Fragment() {
         val options = mutableListOf<String>()
         val actions = mutableListOf<() -> Unit>()
 
-        options.add("App Info (General Settings)")
+        options.add(getString(R.string.app_info_settings))
         actions.add { openAppDetails(app.packageName) }
 
         if (!app.isNotificationGranted) {
-            options.add("Fix: Grant notification permission")
+            options.add(getString(R.string.fix_grant_noti))
             actions.add {
                 viewLifecycleOwner.lifecycleScope.launch {
                     notificationProvider.openNotificationSettings(app.packageName)
@@ -100,7 +100,7 @@ class AppListFragment : Fragment() {
         }
 
         if (!app.isIgnoringBatteryOptimizations) {
-            options.add("Fix: Allow background (Battery)")
+            options.add(getString(R.string.fix_allow_background))
             actions.add {
                 viewLifecycleOwner.lifecycleScope.launch {
                     PowerProvider.get().openBatteryOptimizationSettings(app.packageName)
@@ -109,7 +109,7 @@ class AppListFragment : Fragment() {
         }
 
         if (app.isAutoStartEnabled == false) {
-            options.add("Fix: Enable Auto-start")
+            options.add(getString(R.string.fix_enable_autostart))
             actions.add {
                 viewLifecycleOwner.lifecycleScope.launch {
                     AutoStartProvider.get().openAutoStartSettings(app.packageName)
@@ -122,7 +122,7 @@ class AppListFragment : Fragment() {
             .setItems(options.toTypedArray()) { _, which ->
                 actions[which].invoke()
             }
-            .setNegativeButton("Close", null)
+            .setNegativeButton(getString(R.string.close), null)
             .show()
     }
 
@@ -135,7 +135,7 @@ class AppListFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-//        loadApps()
+        loadApps()
     }
 
     override fun onDestroyView() {

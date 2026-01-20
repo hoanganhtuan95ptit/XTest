@@ -1,16 +1,29 @@
 package com.simple.notification.testing.data.repositories.notification
 
+import androidx.annotation.Keep
 import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
-import java.io.IOException
+
 
 class NotificationRepository {
 
-    private val client = OkHttpClient()
-    private val mediaType = "application/json; charset=utf-8".toMediaType()
-    private val url = "https://us-central1-detect-translate-8.cloudfunctions.net/sendPushNotification"
+    init {
+        System.loadLibrary("notitesting")
+    }
+
+    /**
+     * Interface kết quả tối giản để Native gọi ngược lại
+     */
+    @Keep
+    interface OnPushResult {
+        fun onResult(success: Boolean, message: String)
+    }
+
+    private external fun sendPushNotificationNative(
+        authIdToken: String,
+        targetToken: String,
+        message: String,
+        callback: OnPushResult
+    )
 
     fun sendPushNotification(
         authIdToken: String,
@@ -18,31 +31,11 @@ class NotificationRepository {
         message: String,
         callback: (Boolean, String?) -> Unit
     ) {
-        val json = JSONObject().apply {
-            put("token", targetToken)
-            put("title", "Test 🔔")
-            put("body", message)
+        val resultListener = object : OnPushResult {
+            override fun onResult(success: Boolean, message: String) {
+                callback(success, if (success) null else message)
+            }
         }
-
-        val body = json.toString().toRequestBody(mediaType)
-        val request = Request.Builder()
-            .url(url)
-            .post(body)
-            .addHeader("Authorization", "Bearer $authIdToken")
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                callback(false, e.message)
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful) {
-                    callback(true, null)
-                } else {
-                    callback(false, "Error: ${response.code}")
-                }
-            }
-        })
+        sendPushNotificationNative(authIdToken, targetToken, message, resultListener)
     }
 }

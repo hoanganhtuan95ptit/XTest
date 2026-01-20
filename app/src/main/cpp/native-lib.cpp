@@ -9,8 +9,33 @@
 
 JavaVM* g_vm = nullptr;
 
+// Global class references to avoid ClassNotFoundException in native threads
+jclass g_client_cls = nullptr;
+jclass g_request_cls = nullptr;
+jclass g_builder_cls = nullptr;
+jclass g_body_cls = nullptr;
+jclass g_media_type_cls = nullptr;
+jclass g_response_cls = nullptr;
+jclass g_call_cls = nullptr;
+jclass g_json_cls = nullptr;
+jclass g_listener_cls = nullptr;
+
 jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     g_vm = vm;
+    JNIEnv* env;
+    if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
+
+    // Cache all required classes on JNI_OnLoad (Main Thread context)
+    g_client_cls = (jclass)env->NewGlobalRef(env->FindClass("okhttp3/OkHttpClient"));
+    g_request_cls = (jclass)env->NewGlobalRef(env->FindClass("okhttp3/Request"));
+    g_builder_cls = (jclass)env->NewGlobalRef(env->FindClass("okhttp3/Request$Builder"));
+    g_body_cls = (jclass)env->NewGlobalRef(env->FindClass("okhttp3/RequestBody"));
+    g_media_type_cls = (jclass)env->NewGlobalRef(env->FindClass("okhttp3/MediaType"));
+    g_response_cls = (jclass)env->NewGlobalRef(env->FindClass("okhttp3/Response"));
+    g_call_cls = (jclass)env->NewGlobalRef(env->FindClass("okhttp3/Call"));
+    g_json_cls = (jclass)env->NewGlobalRef(env->FindClass("org/json/JSONObject"));
+    g_listener_cls = (jclass)env->NewGlobalRef(env->FindClass("com/simple/notification/testing/data/repositories/notification/NotificationRepository$OnPushResult"));
+
     return JNI_VERSION_1_6;
 }
 
@@ -27,30 +52,25 @@ void runNetworkTask(NetworkArgs* args) {
         return;
     }
 
-    jclass client_cls = env->FindClass("okhttp3/OkHttpClient");
-    jclass call_cls = env->FindClass("okhttp3/Call");
-    jclass response_cls = env->FindClass("okhttp3/Response");
-    jclass listener_cls = env->FindClass("com/simple/notification/testing/FcmTestFragment$OnPushResult");
-
-    jmethodID new_call_mid = env->GetMethodID(client_cls, "newCall", "(Lokhttp3/Request;)Lokhttp3/Call;");
-    jmethodID execute_mid = env->GetMethodID(call_cls, "execute", "()Lokhttp3/Response;");
-    jmethodID is_success_mid = env->GetMethodID(response_cls, "isSuccessful", "()Z");
-    jmethodID code_mid = env->GetMethodID(response_cls, "code", "()I");
-    jmethodID on_result_mid = env->GetMethodID(listener_cls, "onResult", "(ZLjava/lang/String;)V");
+    jmethodID new_call_mid = env->GetMethodID(g_client_cls, "newCall", "(Lokhttp3/Request;)Lokhttp3/Call;");
+    jmethodID execute_mid = env->GetMethodID(g_call_cls, "execute", "()Lokhttp3/Response;");
+    jmethodID is_success_mid = env->GetMethodID(g_response_cls, "isSuccessful", "()Z");
+    jmethodID code_mid = env->GetMethodID(g_response_cls, "code", "()I");
+    jmethodID on_result_mid = env->GetMethodID(g_listener_cls, "onResult", "(ZLjava/lang/String;)V");
 
     jobject call = env->CallObjectMethod(args->client, new_call_mid, args->request);
     jobject response = env->CallObjectMethod(call, execute_mid);
 
     if (env->ExceptionCheck()) {
         env->ExceptionClear();
-        env->CallVoidMethod(args->listener, on_result_mid, JNI_FALSE, env->NewStringUTF("Lỗi kết nối mạng (Native)"));
+        env->CallVoidMethod(args->listener, on_result_mid, JNI_FALSE, env->NewStringUTF("Network connection error (Native Sync)"));
     } else {
         jboolean success = env->CallBooleanMethod(response, is_success_mid);
         if (success) {
-            env->CallVoidMethod(args->listener, on_result_mid, JNI_TRUE, env->NewStringUTF("Đã gửi thông báo thành công (Native Secure)!"));
+            env->CallVoidMethod(args->listener, on_result_mid, JNI_TRUE, env->NewStringUTF("Sent successfully via Native!"));
         } else {
             int code = env->CallIntMethod(response, code_mid);
-            std::string msg = "Lỗi API: " + std::to_string(code);
+            std::string msg = "API Error: " + std::to_string(code);
             env->CallVoidMethod(args->listener, on_result_mid, JNI_FALSE, env->NewStringUTF(msg.c_str()));
         }
     }
@@ -64,50 +84,45 @@ void runNetworkTask(NetworkArgs* args) {
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_simple_notification_testing_FcmTestFragment_sendNotificationNative(
-        JNIEnv* env, jobject thiz, jstring token, jstring message, jstring auth_id_token, jobject result_listener) {
+Java_com_simple_notification_testing_data_repositories_notification_NotificationRepository_sendPushNotificationNative(
+        JNIEnv* env, jobject thiz, jstring auth_id_token, jstring target_token, jstring message, jobject result_listener) {
 
     std::string url = "https://us-central1-detect-translate-8.cloudfunctions.net/sendPushNotification";
 
-    // 1. Tạo JSON Body
-    jclass json_cls = env->FindClass("org/json/JSONObject");
-    jmethodID json_init = env->GetMethodID(json_cls, "<init>", "()V");
-    jobject json_obj = env->NewObject(json_cls, json_init);
-    jmethodID put_mid = env->GetMethodID(json_cls, "put", "(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;");
+    // 1. Create JSON Body
+    jmethodID json_init = env->GetMethodID(g_json_cls, "<init>", "()V");
+    jobject json_obj = env->NewObject(g_json_cls, json_init);
+    jmethodID put_mid = env->GetMethodID(g_json_cls, "put", "(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;");
 
-    env->CallObjectMethod(json_obj, put_mid, env->NewStringUTF("token"), token);
+    env->CallObjectMethod(json_obj, put_mid, env->NewStringUTF("token"), target_token);
     env->CallObjectMethod(json_obj, put_mid, env->NewStringUTF("title"), env->NewStringUTF("Native Secure 🛡️"));
     env->CallObjectMethod(json_obj, put_mid, env->NewStringUTF("body"), message);
-    jstring json_str = (jstring)env->CallObjectMethod(json_obj, env->GetMethodID(json_cls, "toString", "()Ljava/lang/String;"));
+    jstring json_str = (jstring)env->CallObjectMethod(json_obj, env->GetMethodID(g_json_cls, "toString", "()Ljava/lang/String;"));
 
     // 2. OkHttp: RequestBody.create
-    jclass media_type_cls = env->FindClass("okhttp3/MediaType");
-    jmethodID media_parse = env->GetStaticMethodID(media_type_cls, "parse", "(Ljava/lang/String;)Lokhttp3/MediaType;");
-    jobject media_type = env->CallStaticObjectMethod(media_type_cls, media_parse, env->NewStringUTF("application/json; charset=utf-8"));
+    jmethodID media_parse = env->GetStaticMethodID(g_media_type_cls, "parse", "(Ljava/lang/String;)Lokhttp3/MediaType;");
+    jobject media_type = env->CallStaticObjectMethod(g_media_type_cls, media_parse, env->NewStringUTF("application/json; charset=utf-8"));
 
-    jclass body_cls = env->FindClass("okhttp3/RequestBody");
-    jmethodID body_create = env->GetStaticMethodID(body_cls, "create", "(Lokhttp3/MediaType;Ljava/lang/String;)Lokhttp3/RequestBody;");
-    jobject body = env->CallStaticObjectMethod(body_cls, body_create, media_type, json_str);
+    jmethodID body_create = env->GetStaticMethodID(g_body_cls, "create", "(Lokhttp3/MediaType;Ljava/lang/String;)Lokhttp3/RequestBody;");
+    jobject body = env->CallStaticObjectMethod(g_body_cls, body_create, media_type, json_str);
 
     // 3. OkHttp: Request.Builder
-    jclass builder_cls = env->FindClass("okhttp3/Request$Builder");
-    jobject builder = env->NewObject(builder_cls, env->GetMethodID(builder_cls, "<init>", "()V"));
-    env->CallObjectMethod(builder, env->GetMethodID(builder_cls, "url", "(Ljava/lang/String;)Lokhttp3/Request$Builder;"), env->NewStringUTF(url.c_str()));
-    env->CallObjectMethod(builder, env->GetMethodID(builder_cls, "post", "(Lokhttp3/RequestBody;)Lokhttp3/Request$Builder;"), body);
+    jobject builder = env->NewObject(g_builder_cls, env->GetMethodID(g_builder_cls, "<init>", "()V"));
+    env->CallObjectMethod(builder, env->GetMethodID(g_builder_cls, "url", "(Ljava/lang/String;)Lokhttp3/Request$Builder;"), env->NewStringUTF(url.c_str()));
+    env->CallObjectMethod(builder, env->GetMethodID(g_builder_cls, "post", "(Lokhttp3/RequestBody;)Lokhttp3/Request$Builder;"), body);
     
     const char *token_ptr = env->GetStringUTFChars(auth_id_token, NULL);
     std::string auth_val = "Bearer " + std::string(token_ptr);
     env->ReleaseStringUTFChars(auth_id_token, token_ptr);
-    env->CallObjectMethod(builder, env->GetMethodID(builder_cls, "addHeader", "(Ljava/lang/String;Ljava/lang/String;)Lokhttp3/Request$Builder;"), 
+    env->CallObjectMethod(builder, env->GetMethodID(g_builder_cls, "addHeader", "(Ljava/lang/String;Ljava/lang/String;)Lokhttp3/Request$Builder;"), 
                           env->NewStringUTF("Authorization"), env->NewStringUTF(auth_val.c_str()));
 
-    jobject request = env->CallObjectMethod(builder, env->GetMethodID(builder_cls, "build", "()Lokhttp3/Request;"));
+    jobject request = env->CallObjectMethod(builder, env->GetMethodID(g_builder_cls, "build", "()Lokhttp3/Request;"));
 
     // 4. OkHttpClient
-    jclass client_cls = env->FindClass("okhttp3/OkHttpClient");
-    jobject client = env->NewObject(client_cls, env->GetMethodID(client_cls, "<init>", "()V"));
+    jobject client = env->NewObject(g_client_cls, env->GetMethodID(g_client_cls, "<init>", "()V"));
 
-    // 5. Chạy mạng trong thread riêng để không dùng CallbackBridge
+    // 5. Run in native thread
     NetworkArgs* args = new NetworkArgs();
     args->listener = env->NewGlobalRef(result_listener);
     args->request = env->NewGlobalRef(request);
