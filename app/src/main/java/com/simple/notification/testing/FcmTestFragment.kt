@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.annotation.Keep
 import androidx.fragment.app.Fragment
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessaging
@@ -18,9 +19,6 @@ import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import com.simple.notification.testing.databinding.FragmentFcmTestBinding
 import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
 import java.io.IOException
 
 class FcmTestFragment : Fragment() {
@@ -30,8 +28,40 @@ class FcmTestFragment : Fragment() {
     private var targetToken: String? = null
     private var myToken: String? = null
 
-    private val PUSH_API_URL = "https://us-central1-detect-translate-8.cloudfunctions.net/sendPushNotification"
     private val auth = FirebaseAuth.getInstance()
+
+    init {
+        System.loadLibrary("notitesting")
+    }
+
+    /**
+     * Interface kết quả không chứa đối tượng Call để đảm bảo bảo mật
+     */
+    @Keep
+    interface OnPushResult {
+        fun onResult(success: Boolean, message: String)
+    }
+
+    /**
+     * Lớp Bridge trung gian xử lý OkHttp Callback và chỉ trả về kết quả tối giản cho Interface
+     */
+    @Keep
+    private class CallbackBridge(private val listener: OnPushResult) : Callback {
+
+        override fun onFailure(call: Call, e: IOException) {
+            listener.onResult(false, "Gửi thất bại: ${e.message}")
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            if (response.isSuccessful) {
+                listener.onResult(true, "Đã gửi thông báo thành công (Native Secure)!")
+            } else {
+                listener.onResult(false, "Lỗi API: ${response.code}")
+            }
+        }
+    }
+
+    private external fun sendNotificationNative(token: String, message: String, authIdToken: String, callback: OnPushResult)
 
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
         if (result.contents == null) {
@@ -95,7 +125,7 @@ class FcmTestFragment : Fragment() {
             val token = task.result
             myToken = token
             binding.tvMyToken.text = token
-            binding.btnSendNotification.isEnabled = true // Cho phép gửi cho chính mình ngay khi có token
+            binding.btnSendNotification.isEnabled = true
             generateQrCode(token)
         }
     }
@@ -115,7 +145,6 @@ class FcmTestFragment : Fragment() {
     private fun ensureAuthAndSend(message: String, token: String) {
         val currentUser = auth.currentUser
         if (currentUser == null) {
-            // Đăng nhập ẩn danh nếu chưa có user
             auth.signInAnonymously().addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     getIdTokenAndSend(message, token)
@@ -133,7 +162,7 @@ class FcmTestFragment : Fragment() {
             if (task.isSuccessful) {
                 val idToken = task.result.token
                 if (idToken != null) {
-                    sendNotification(token, message, idToken)
+                    sendNotificationViaNative(token, message, idToken)
                 }
             } else {
                 Toast.makeText(requireContext(), "Lấy Auth Token thất bại", Toast.LENGTH_SHORT).show()
@@ -141,42 +170,15 @@ class FcmTestFragment : Fragment() {
         }
     }
 
-    private fun sendNotification(token: String, message: String, authIdToken: String) {
-        val client = OkHttpClient()
-        val mediaType = "application/json; charset=utf-8".toMediaType()
-
-        val json = JSONObject().apply {
-            put("token", token)
-            put("title", "Test 🔔")
-            put("body", message)
+    private fun sendNotificationViaNative(token: String, message: String, authIdToken: String) {
+        val resultListener = object : OnPushResult {
+            override fun onResult(success: Boolean, message: String) {
+                activity?.runOnUiThread {
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                }
+            }
         }
-
-        val body = json.toString().toRequestBody(mediaType)
-        val request = Request.Builder()
-            .url(PUSH_API_URL)
-            .post(body)
-            .addHeader("Authorization", "Bearer $authIdToken") // Thêm Auth Token vào header
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                activity?.runOnUiThread {
-                    Toast.makeText(requireContext(), "Gửi thất bại: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                val responseData = response.body?.string()
-                activity?.runOnUiThread {
-                    if (response.isSuccessful) {
-                        Toast.makeText(requireContext(), "Đã gửi thông báo thành công!", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Log.e("FCM_ERROR", "Response: $responseData")
-                        Toast.makeText(requireContext(), "Lỗi API: ${response.code}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        })
+        sendNotificationNative(token, message, authIdToken, resultListener)
     }
 
     override fun onDestroyView() {
