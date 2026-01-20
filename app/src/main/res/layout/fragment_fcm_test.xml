@@ -1,81 +1,208 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/white"
-    android:padding="16dp">
+    android:background="#F5F7FA">
 
-    <LinearLayout
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical">
+        android:background="#FFFFFF"
+        android:minHeight="?attr/actionBarSize"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:title="@string/fcm_test_title"
+        app:titleTextColor="#1A1C1E" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Token của máy này (Dùng máy khác để quét)"
-            android:textStyle="bold" />
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/llBottomButtons"
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
 
-        <ImageView
-            android:id="@+id/ivQrCode"
-            android:layout_width="250dp"
-            android:layout_height="250dp"
-            android:layout_marginTop="8dp"
-            android:background="#EEEEEE" />
-
-        <TextView
-            android:id="@+id/tvMyToken"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:textSize="12sp"
-            android:textIsSelectable="true" />
+            android:orientation="vertical"
+            android:padding="20dp">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginVertical="24dp"
-            android:background="#CCCCCC" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/identity_info"
+                android:textColor="#1A1C1E"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
-        <Button
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#FFFFFF"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <ImageView
+                        android:id="@+id/ivQrCode"
+                        android:layout_width="180dp"
+                        android:layout_height="180dp"
+                        android:background="#FAFAFA"
+                        android:padding="8dp" />
+
+                    <TextView
+                        android:id="@+id/tvMyToken"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="#F5F5F5"
+                        android:gravity="center"
+                        android:padding="8dp"
+                        android:textColor="#757575"
+                        android:textIsSelectable="true"
+                        android:textSize="10sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/receive_config"
+                android:textColor="#1A1C1E"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <!-- System Config Group -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#FFFFFF"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnNotificationPermission"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:text="@string/noti_permission"
+                        android:textAlignment="viewStart"
+                        android:textColor="#424242"
+                        app:icon="@android:drawable/ic_popup_reminder"
+                        app:iconTint="#2196F3" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:background="#EEEEEE" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnOpenBackgroundSettings"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:text="@string/background_run"
+                        android:textAlignment="viewStart"
+                        android:textColor="#424242"
+                        app:icon="@android:drawable/ic_lock_idle_low_battery"
+                        app:iconTint="#4CAF50" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:background="#EEEEEE" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnOpenAutoStart"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:text="@string/auto_start"
+                        android:textAlignment="viewStart"
+                        android:textColor="#424242"
+                        app:icon="@android:drawable/ic_menu_revert"
+                        app:iconTint="#FF9800" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <LinearLayout
+                android:id="@+id/llTargetInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvTargetTokenLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sending_to"
+                    android:textColor="#2196F3"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvTargetToken"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="middle"
+                    android:singleLine="true"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout
+        android:id="@+id/llBottomButtons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnScanQr"
+            style="@style/Widget.Material3.Button"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Quét mã QR máy khác" />
-
-        <TextView
-            android:id="@+id/tvTargetTokenLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Token máy đích:"
+            android:layout_height="80dp"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="#FF9800"
+            android:text="@string/scan_other_device"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:visibility="gone" />
+            app:cornerRadius="20dp"
+            app:icon="@android:drawable/ic_menu_camera"
+            app:iconSize="32dp" />
 
-        <TextView
-            android:id="@+id/tvTargetToken"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTestSelf"
+            style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:visibility="gone" />
-
-        <EditText
-            android:id="@+id/etMessage"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="Nhập nội dung thông báo"
-            android:inputType="text" />
-
-        <Button
-            android:id="@+id/btnSendNotification"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:enabled="false"
-            android:text="Gửi thông báo" />
-
+            android:layout_height="64dp"
+            android:text="@string/test_for_this_device"
+            android:textStyle="bold"
+            app:cornerRadius="16dp" />
     </LinearLayout>
-</ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

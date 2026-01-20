@@ -36,20 +36,23 @@ class AppAdapter(
             binding.ivAppIcon.setImageDrawable(app.icon)
 
             binding.tvNotiStatus.apply {
-                text = "Thông báo: ${if (app.isNotificationGranted) "Bật" else "Tắt"}"
-                setTextColor(if (app.isNotificationGranted) Color.GREEN else Color.RED)
+                text = "Thông báo"
+                setTextColor(if (app.isNotificationGranted) Color.parseColor("#4CAF50") else Color.parseColor("#F44336"))
+                alpha = if (app.isNotificationGranted) 1.0f else 0.6f
             }
 
             binding.tvPowerStatus.apply {
-                text = "Chạy ngầm: ${if (app.isIgnoringBatteryOptimizations) "Bật" else "Tắt"}"
-                setTextColor(if (app.isIgnoringBatteryOptimizations) Color.GREEN else Color.RED)
+                text = "Chạy ngầm"
+                setTextColor(if (app.isIgnoringBatteryOptimizations) Color.parseColor("#4CAF50") else Color.parseColor("#F44336"))
+                alpha = if (app.isIgnoringBatteryOptimizations) 1.0f else 0.6f
             }
 
             if (app.isAutoStartEnabled != null) {
                 binding.tvAutoStartStatus.apply {
                     visibility = View.VISIBLE
-                    text = "Tự khởi chạy: ${if (app.isAutoStartEnabled) "Bật" else "Tắt"}"
-                    setTextColor(if (app.isAutoStartEnabled) Color.GREEN else Color.RED)
+                    text = "Tự khởi chạy"
+                    setTextColor(if (app.isAutoStartEnabled) Color.parseColor("#4CAF50") else Color.parseColor("#F44336"))
+                    alpha = if (app.isAutoStartEnabled) 1.0f else 0.6f
                 }
             } else {
                 binding.tvAutoStartStatus.visibility = View.GONE

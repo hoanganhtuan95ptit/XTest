@@ -1,0 +1,64 @@
+<resources>
+    <string name="app_name">NotiTesting</string>
+    
+    <!-- Màn hình chính -->
+    <string name="system_status">Trạng thái hệ thống</string>
+    <string name="checking_device">Đang phân tích thiết bị...</string>
+    <string name="device_check_label">KIỂM TRA THIẾT BỊ</string>
+    <string name="test_notification_title">KIỂM TRA THÔNG BÁO (FCM)</string>
+    <string name="test_notification_desc">Gửi/Nhận thông báo thử nghiệm cho máy này</string>
+    <string name="fix_other_apps_title">DANH SÁCH SỬA LỖI APP KHÁC</string>
+    <string name="fix_other_apps_desc">Hướng dẫn cấp quyền cho Zalo, Messenger, v.v.</string>
+    <string name="quick_scan_title">QUÉT QR GỬI NHANH</string>
+    <string name="quick_scan_desc">Quét mã máy khác để gửi thông báo thử nghiệm</string>
+
+    <!-- Màn hình Test FCM -->
+    <string name="fcm_test_title">Kiểm tra FCM</string>
+    <string name="identity_info">Thông tin định danh</string>
+    <string name="receive_config">Cấu hình nhận thông báo</string>
+    <string name="noti_permission">Quyền thông báo</string>
+    <string name="background_run">Chạy ngầm (Pin)</string>
+    <string name="auto_start">Tự khởi chạy</string>
+    <string name="scan_other_device">QUÉT MÃ QR THIẾT BỊ KHÁC</string>
+    <string name="test_for_this_device">TỰ TEST CHO MÁY NÀY</string>
+    <string name="sending_to">Đang gửi tới thiết bị đã quét:</string>
+    <string name="scan_qr_prompt">Quét mã QR Token từ thiết bị khác</string>
+    <string name="noti_permission_granted">Đã cấp quyền thông báo</string>
+    <string name="noti_permission_denied">Từ chối quyền thông báo</string>
+    <string name="noti_already_enabled">Thông báo đã được bật</string>
+    <string name="bg_already_allowed">Ứng dụng đã được phép chạy ngầm</string>
+    <string name="auto_start_already_enabled">Tự khởi chạy đã được bật</string>
+    <string name="oppo_guidance_title">Hướng dẫn Tự khởi chạy</string>
+    <string name="oppo_guidance_message">Để ứng dụng hoạt động ổn định trên máy Oppo/Realme, vui lòng thực hiện các bước sau ở màn hình tiếp theo:\n\n1. Chọn \'Sử dụng pin\'.\n2. Bật \'Cho phép tự động khởi chạy\'.\n3. Bật \'Cho phép hoạt động dưới nền\'.</string>
+    <string name="understand_open">Tôi đã hiểu và Mở</string>
+    <string name="later">Để sau</string>
+    
+    <!-- Trạng thái & Thông báo -->
+    <string name="noti_enabled_success">✅ Đã bật thông báo</string>
+    <string name="grant_noti_permission">Cấp quyền thông báo</string>
+    <string name="background_allowed_success">✅ Đã cho phép chạy ngầm</string>
+    <string name="allow_background">Cho phép chạy ngầm</string>
+    <string name="auto_start_enabled_success">✅ Đã bật tự khởi chạy</string>
+    <string name="enable_auto_start">Bật tự khởi chạy</string>
+    <string name="token_fetch_failed">Lấy token thất bại</string>
+    <string name="qr_scan_cancelled">Đã hủy quét</string>
+    <string name="qr_scan_success">Đã lấy được token từ QR!</string>
+    <string name="waiting_for_token">Đang lấy token máy này, vui lòng đợi...</string>
+    
+    <!-- Bottom Sheet -->
+    <string name="send_test_noti">Gửi thông báo thử nghiệm</string>
+    <string name="send_to_label">Gửi tới: %1$s</string>
+    <string name="message_hint">Nhập lời nhắn của bạn</string>
+    <string name="confirm_send">XÁC NHẬN GỬI</string>
+    <string name="please_enter_message">Vui lòng nhập lời nhắn</string>
+    <string name="send_success">Đã gửi thông báo thành công!</string>
+    <string name="auth_failed">Xác thực thất bại</string>
+    
+    <!-- Danh sách App -->
+    <string name="fix_noti_title">Sửa lỗi thông báo</string>
+    <string name="app_info_settings">Thông tin ứng dụng (Cài đặt chung)</string>
+    <string name="fix_grant_noti">Sửa: Cấp quyền thông báo</string>
+    <string name="fix_allow_background">Sửa: Cho phép chạy ngầm (Pin)</string>
+    <string name="fix_enable_autostart">Sửa: Bật tự khởi chạy</string>
+    <string name="close">Đóng</string>
+</resources>

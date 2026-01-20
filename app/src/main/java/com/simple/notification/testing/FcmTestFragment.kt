@@ -1,15 +1,22 @@
 package com.simple.notification.testing
 
+import android.Manifest
+import android.app.AlertDialog
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.Keep
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
-import com.google.firebase.auth.FirebaseAuth
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
@@ -17,9 +24,12 @@ import com.google.zxing.WriterException
 import com.journeyapps.barcodescanner.BarcodeEncoder
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import com.simple.notification.testing.data.repositories.notification.AutoStartProvider
+import com.simple.notification.testing.data.repositories.notification.PowerProvider
+import com.simple.notification.testing.data.repositories.notification.general.DefaultNotificationProvider
 import com.simple.notification.testing.databinding.FragmentFcmTestBinding
-import okhttp3.*
-import java.io.IOException
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 class FcmTestFragment : Fragment() {
 
@@ -28,51 +38,24 @@ class FcmTestFragment : Fragment() {
     private var targetToken: String? = null
     private var myToken: String? = null
 
-    private val auth = FirebaseAuth.getInstance()
+    private val notificationProvider = DefaultNotificationProvider()
 
-    init {
-        System.loadLibrary("notitesting")
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        val msg = if (isGranted) getString(R.string.noti_permission_granted) else getString(R.string.noti_permission_denied)
+        Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+        updateButtonStates()
     }
-
-    /**
-     * Interface kết quả không chứa đối tượng Call để đảm bảo bảo mật
-     */
-    @Keep
-    interface OnPushResult {
-        fun onResult(success: Boolean, message: String)
-    }
-
-    /**
-     * Lớp Bridge trung gian xử lý OkHttp Callback và chỉ trả về kết quả tối giản cho Interface
-     */
-    @Keep
-    private class CallbackBridge(private val listener: OnPushResult) : Callback {
-
-        override fun onFailure(call: Call, e: IOException) {
-            listener.onResult(false, "Gửi thất bại: ${e.message}")
-        }
-
-        override fun onResponse(call: Call, response: Response) {
-            if (response.isSuccessful) {
-                listener.onResult(true, "Đã gửi thông báo thành công (Native Secure)!")
-            } else {
-                listener.onResult(false, "Lỗi API: ${response.code}")
-            }
-        }
-    }
-
-    private external fun sendNotificationNative(token: String, message: String, authIdToken: String, callback: OnPushResult)
 
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
-        if (result.contents == null) {
-            Toast.makeText(requireContext(), "Đã hủy quét", Toast.LENGTH_LONG).show()
-        } else {
+        if (result.contents != null) {
             targetToken = result.contents
+            binding.llTargetInfo.visibility = View.VISIBLE
             binding.tvTargetToken.text = targetToken
-            binding.tvTargetToken.visibility = View.VISIBLE
-            binding.tvTargetTokenLabel.visibility = View.VISIBLE
-            binding.btnSendNotification.isEnabled = true
-            Toast.makeText(requireContext(), "Đã lấy được token từ QR!", Toast.LENGTH_SHORT).show()
+            showSendBottomSheet(targetToken!!)
+        } else {
+            Toast.makeText(requireContext(), getString(R.string.qr_scan_cancelled), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -87,6 +70,27 @@ class FcmTestFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            binding.toolbar.updatePadding(top = systemBars.top)
+
+            v.updatePadding(
+                left = systemBars.left,
+                right = systemBars.right,
+                bottom = systemBars.bottom
+            )
+            insets
+        }
+
+        binding.toolbar.setNavigationOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
+
+        setupNotificationButton()
+        setupBatteryButton()
+        setupAutoStartButton()
+        
         getMyFcmToken()
 
         binding.btnScanQr.setOnClickListener {
@@ -94,38 +98,101 @@ class FcmTestFragment : Fragment() {
                 setCaptureActivity(CaptureActivityPortrait::class.java)
                 setOrientationLocked(false)
                 setBeepEnabled(true)
-                setPrompt("Quét mã QR Token")
+                setPrompt(getString(R.string.scan_qr_prompt))
             }
             barcodeLauncher.launch(options)
         }
 
-        binding.btnSendNotification.setOnClickListener {
-            val message = binding.etMessage.text.toString()
-            if (message.isEmpty()) {
-                Toast.makeText(requireContext(), "Vui lòng nhập nội dung", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+        binding.btnTestSelf.setOnClickListener {
+            if (myToken != null) {
+                showSendBottomSheet(myToken!!)
+            } else {
+                Toast.makeText(requireContext(), getString(R.string.waiting_for_token), Toast.LENGTH_SHORT).show()
             }
-
-            val tokenToSend = targetToken ?: myToken
-            if (tokenToSend == null) {
-                Toast.makeText(requireContext(), "Chưa có token để gửi", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            
-            ensureAuthAndSend(message, tokenToSend)
         }
+    }
+
+    private fun showSendBottomSheet(token: String) {
+        val bottomSheet = SendNotificationBottomSheet(token)
+        bottomSheet.show(parentFragmentManager, "SendNotificationBottomSheet")
+    }
+
+    private fun setupNotificationButton() {
+        binding.btnNotificationPermission.setOnClickListener {
+            if (notificationProvider.isGranted(requireContext().packageName)) {
+                Toast.makeText(requireContext(), getString(R.string.noti_already_enabled), Toast.LENGTH_SHORT).show()
+            } else {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        notificationProvider.openNotificationSettings(requireContext().packageName)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setupBatteryButton() {
+        binding.btnOpenBackgroundSettings.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val provider = PowerProvider.get()
+                val packageName = requireContext().packageName
+                if (provider.isIgnoringBatteryOptimizations(packageName)) {
+                    Toast.makeText(requireContext(), getString(R.string.bg_already_allowed), Toast.LENGTH_SHORT).show()
+                } else {
+                    provider.openBatteryOptimizationSettings(packageName)
+                }
+            }
+        }
+    }
+
+    private fun setupAutoStartButton() {
+        val provider = AutoStartProvider.get()
+        if (provider.isAvailable()) {
+            binding.btnOpenAutoStart.visibility = View.VISIBLE
+            binding.btnOpenAutoStart.setOnClickListener {
+                val manufacturer = Build.MANUFACTURER.lowercase(Locale.getDefault())
+                if (manufacturer.contains("oppo") || manufacturer.contains("realme")) {
+                    showOppoGuidanceDialog {
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            provider.openAutoStartSettings(requireContext().packageName)
+                        }
+                    }
+                } else {
+                    if (provider.isEnabled(requireContext().packageName) == true) {
+                        Toast.makeText(requireContext(), getString(R.string.auto_start_already_enabled), Toast.LENGTH_SHORT).show()
+                    }
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        provider.openAutoStartSettings(requireContext().packageName)
+                    }
+                }
+            }
+        } else {
+            binding.btnOpenAutoStart.visibility = View.GONE
+        }
+    }
+
+    private fun showOppoGuidanceDialog(onConfirm: () -> Unit) {
+        AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.oppo_guidance_title))
+            .setMessage(getString(R.string.oppo_guidance_message))
+            .setPositiveButton(getString(R.string.understand_open)) { _, _ ->
+                onConfirm()
+            }
+            .setNegativeButton(getString(R.string.later), null)
+            .show()
     }
 
     private fun getMyFcmToken() {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (!task.isSuccessful) {
-                Log.w("FCM", "Lấy token thất bại", task.exception)
+                Log.w("FCM", getString(R.string.token_fetch_failed), task.exception)
                 return@addOnCompleteListener
             }
             val token = task.result
             myToken = token
             binding.tvMyToken.text = token
-            binding.btnSendNotification.isEnabled = true
             generateQrCode(token)
         }
     }
@@ -142,43 +209,40 @@ class FcmTestFragment : Fragment() {
         }
     }
 
-    private fun ensureAuthAndSend(message: String, token: String) {
-        val currentUser = auth.currentUser
-        if (currentUser == null) {
-            auth.signInAnonymously().addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    getIdTokenAndSend(message, token)
-                } else {
-                    Toast.makeText(requireContext(), "Đăng nhập thất bại: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-        } else {
-            getIdTokenAndSend(message, token)
-        }
+    override fun onResume() {
+        super.onResume()
+        updateButtonStates()
     }
 
-    private fun getIdTokenAndSend(message: String, token: String) {
-        auth.currentUser?.getIdToken(true)?.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val idToken = task.result.token
-                if (idToken != null) {
-                    sendNotificationViaNative(token, message, idToken)
-                }
+    private fun updateButtonStates() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val packageName = requireContext().packageName
+            if (notificationProvider.isGranted(packageName)) {
+                binding.btnNotificationPermission.text = getString(R.string.noti_enabled_success)
+                binding.btnNotificationPermission.alpha = 0.6f
             } else {
-                Toast.makeText(requireContext(), "Lấy Auth Token thất bại", Toast.LENGTH_SHORT).show()
+                binding.btnNotificationPermission.text = getString(R.string.grant_noti_permission)
+                binding.btnNotificationPermission.alpha = 1.0f
             }
-        }
-    }
 
-    private fun sendNotificationViaNative(token: String, message: String, authIdToken: String) {
-        val resultListener = object : OnPushResult {
-            override fun onResult(success: Boolean, message: String) {
-                activity?.runOnUiThread {
-                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-                }
+            val pProvider = PowerProvider.get()
+            if (pProvider.isIgnoringBatteryOptimizations(packageName)) {
+                binding.btnOpenBackgroundSettings.text = getString(R.string.background_allowed_success)
+                binding.btnOpenBackgroundSettings.alpha = 0.6f
+            } else {
+                binding.btnOpenBackgroundSettings.text = getString(R.string.allow_background)
+                binding.btnOpenBackgroundSettings.alpha = 1.0f
+            }
+
+            val asProvider = AutoStartProvider.get()
+            if (asProvider.isEnabled(packageName) == true) {
+                binding.btnOpenAutoStart.text = getString(R.string.auto_start_enabled_success)
+                binding.btnOpenAutoStart.alpha = 0.6f
+            } else {
+                binding.btnOpenAutoStart.text = getString(R.string.enable_auto_start)
+                binding.btnOpenAutoStart.alpha = 1.0f
             }
         }
-        sendNotificationNative(token, message, authIdToken, resultListener)
     }
 
     override fun onDestroyView() {

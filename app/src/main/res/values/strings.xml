@@ -1,3 +1,64 @@
 <resources>
     <string name="app_name">NotiTesting</string>
+    
+    <!-- Main Screen -->
+    <string name="system_status">System Status</string>
+    <string name="checking_device">Analyzing device integrity...</string>
+    <string name="device_check_label">DEVICE INTEGRITY CHECK</string>
+    <string name="test_notification_title">TEST NOTIFICATIONS (FCM)</string>
+    <string name="test_notification_desc">Send/Receive test notifications for this device</string>
+    <string name="fix_other_apps_title">FIX OTHER APPS LIST</string>
+    <string name="fix_other_apps_desc">Guides to grant permissions for Zalo, Messenger, etc.</string>
+    <string name="quick_scan_title">QUICK SCAN &amp; SEND</string>
+    <string name="quick_scan_desc">Scan other device QR to send test notification</string>
+
+    <!-- FCM Test Screen -->
+    <string name="fcm_test_title">FCM Test</string>
+    <string name="identity_info">Identity Information</string>
+    <string name="receive_config">Notification Configuration</string>
+    <string name="noti_permission">Notification Permission</string>
+    <string name="background_run">Background Activity (Battery)</string>
+    <string name="auto_start">Auto-start</string>
+    <string name="scan_other_device">SCAN OTHER DEVICE QR</string>
+    <string name="test_for_this_device">SELF-TEST FOR THIS DEVICE</string>
+    <string name="sending_to">Sending to scanned device:</string>
+    <string name="scan_qr_prompt">Scan FCM Token QR from another device</string>
+    <string name="noti_permission_granted">Notification permission granted</string>
+    <string name="noti_permission_denied">Notification permission denied</string>
+    <string name="noti_already_enabled">Notifications are already enabled</string>
+    <string name="bg_already_allowed">App is already allowed to run in background</string>
+    <string name="auto_start_already_enabled">Auto-start seems to be enabled</string>
+    <string name="oppo_guidance_title">Auto-start Guidance</string>
+    <string name="oppo_guidance_message">To ensure the app works stably on Oppo/Realme devices, please perform the following in the next screen:\n\n1. Select \'Battery usage\'.\n2. Enable \'Allow auto-launch\'.\n3. Enable \'Allow background activity\'.</string>
+    <string name="understand_open">I understand &amp; Open</string>
+    <string name="later">Later</string>
+    
+    <!-- Status & Toasts -->
+    <string name="noti_enabled_success">✅ Notifications enabled</string>
+    <string name="grant_noti_permission">Grant notification permission</string>
+    <string name="background_allowed_success">✅ Background allowed (Battery)</string>
+    <string name="allow_background">Allow background (Battery)</string>
+    <string name="auto_start_enabled_success">✅ Auto-start enabled</string>
+    <string name="enable_auto_start">Enable Auto-start</string>
+    <string name="token_fetch_failed">Failed to fetch token</string>
+    <string name="qr_scan_cancelled">Scan cancelled</string>
+    <string name="qr_scan_success">Token successfully retrieved from QR!</string>
+    <string name="waiting_for_token">Fetching token for this device, please wait...</string>
+    
+    <!-- Bottom Sheet -->
+    <string name="send_test_noti">Send Test Notification</string>
+    <string name="send_to_label">Send to: %1$s</string>
+    <string name="message_hint">Enter your message</string>
+    <string name="confirm_send">CONFIRM SEND</string>
+    <string name="please_enter_message">Please enter a message</string>
+    <string name="send_success">Notification sent successfully!</string>
+    <string name="auth_failed">Authentication failed</string>
+    
+    <!-- App List -->
+    <string name="fix_noti_title">Fix Notification Issues</string>
+    <string name="app_info_settings">App Info (General Settings)</string>
+    <string name="fix_grant_noti">Fix: Grant notification permission</string>
+    <string name="fix_allow_background">Fix: Allow background (Battery)</string>
+    <string name="fix_enable_autostart">Fix: Enable Auto-start</string>
+    <string name="close">Close</string>
 </resources>
