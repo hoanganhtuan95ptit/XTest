@@ -49,7 +49,7 @@ class MainFragment : Fragment() {
 
         setupDeviceIntegrity()
         setupQuickScanButton()
-        setupAppListButton()
+//        setupAppListButton()
         setupFcmButton()
     }
 

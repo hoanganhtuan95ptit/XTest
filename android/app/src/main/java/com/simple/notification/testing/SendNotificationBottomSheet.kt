@@ -63,11 +63,12 @@ class SendNotificationBottomSheet(
     }
 
     private fun getIdTokenAndSend(message: String) {
+        val ctx = context ?: return
         auth.currentUser?.getIdToken(true)?.addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val idToken = task.result.token
                 if (idToken != null) {
-                    notificationRepository.sendPushNotification(idToken, targetToken, message) { success, error ->
+                    notificationRepository.sendPushNotification(ctx, idToken, targetToken, message) { success, error ->
                         activity?.runOnUiThread {
                             binding.btnConfirmSend.isEnabled = true
                             if (success) {

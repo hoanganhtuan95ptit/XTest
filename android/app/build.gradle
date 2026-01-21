@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.kapt)
 }
 
+apply from: "../../../1CorePrivate/config/noti_testing/config.gradle"// can remove
+
 android {
     namespace 'com.simple.notification.testing'
     compileSdk 36
@@ -13,15 +15,26 @@ android {
         applicationId "com.simple.notification.testing"
         minSdk 24
         targetSdk 36
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        keystore {
+            keyAlias project.ext.keyAlias // can remove
+            keyPassword project.ext.keyPassword // can remove
+
+            storeFile file(project.ext.storeFile) // can remove
+            storePassword project.ext.storePassword // can remove
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.keystore  // can remove
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

@@ -1,5 +1,6 @@
 package com.simple.notification.testing.data.repositories.notification
 
+import android.content.Context
 import androidx.annotation.Keep
 import okhttp3.*
 
@@ -19,6 +20,7 @@ class NotificationRepository {
     }
 
     private external fun sendPushNotificationNative(
+        context: Context,
         authIdToken: String,
         targetToken: String,
         message: String,
@@ -26,6 +28,7 @@ class NotificationRepository {
     )
 
     fun sendPushNotification(
+        context: Context,
         authIdToken: String,
         targetToken: String,
         message: String,
@@ -36,6 +39,6 @@ class NotificationRepository {
                 callback(success, if (success) null else message)
             }
         }
-        sendPushNotificationNative(authIdToken, targetToken, message, resultListener)
+        sendPushNotificationNative(context, authIdToken, targetToken, message, resultListener)
     }
 }
